@@ -28,8 +28,6 @@ from datetime import datetime
 
 import paramiko
 
-congfig_file = "config.json"
-
 
 class FTPIngestion:
     
@@ -105,21 +103,21 @@ class FTPIngestion:
             print('could not establish sftp connection')
         return self.sftp_ok
 
-    def move_files_to_original(self):
-        """
-        This method copies the original files from parent directory to original directory on the FTP server.
-        :param source_file_path: directory path in which file resides
-        :param source_file_name: name of the file
-        """
-        print('moving files to original directory')
-        src = self.ftp_directory_path + '/*'
-        dest = self.ftp_original_path
+    # def move_files_to_original(self):
+    #     """
+    #     This method copies the original files from parent directory to original directory on the FTP server.
+    #     :param source_file_path: directory path in which file resides
+    #     :param source_file_name: name of the file
+    #     """
+    #     print('moving files to original directory')
+    #     src = self.ftp_directory_path + '/*'
+    #     dest = self.ftp_original_path
 
-        try:
-            stdin, stdout, stderr = self.ssh_client.exec_command(
-                "mv " + src+" " + dest)
-        except Exception as error:
-            print("error moving files to original directory, error: ", error)
+    #     try:
+    #         stdin, stdout, stderr = self.ssh_client.exec_command(
+    #             "mv " + src+" " + dest)
+    #     except Exception as error:
+    #         print("error moving files to original directory, error: ", error)
 
     def move_files_to_processing(self, source_file_path, source_file_name):
         """
@@ -134,7 +132,7 @@ class FTPIngestion:
         dest = processing_directory + source_file_name
         try:
             stdin, stdout, stderr = self.ssh_client.exec_command(
-                "cp " + src+" " + dest)
+                "mv " + src+" " + dest)
         except Exception as error:
             print("error moving files to proccessing directory, error: ", error)
 
@@ -211,9 +209,9 @@ class FTPIngestion:
         """
         try:
             if self.create_sftp_connection():
-                # copy files from parent directory to original directory
-                self.move_files_to_original()
-                self.sftp_client.chdir(self.ftp_original_path)
+                # # copy files from parent directory to original directory
+                # self.move_files_to_original()
+                self.sftp_client.chdir(self.ftp_directory_path)
 
                 # copy files from parent directory to processing directory
                 files_to_upload = self.sftp_client.listdir()
