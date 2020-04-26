@@ -20,7 +20,7 @@ import config as cfg
 from boto3.s3.transfer import TransferConfig
 from datetime import datetime
 
-### uncomment following lines if running as an AWS Glue Job.
+# uncomment following lines if running as an AWS Glue Job.
 
 # install_path = os.environ['GLUE_INSTALLATION']
 # easy_install.main( ["--install-dir", install_path, "https://files.pythonhosted.org/packages/ac/15/4351003352e11300b9f44a13576bff52dcdc6e4a911129c07447bda0a358/paramiko-2.7.1.tar.gz"] )
