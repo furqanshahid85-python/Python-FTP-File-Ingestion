@@ -30,7 +30,7 @@ import paramiko
 
 
 class FTPIngestion:
-    
+
     def __init__(self):
         self.ssh_client = cfg.SSH_CLIENT
         self.sftp_client = cfg.SFTP_CLIENT
@@ -76,8 +76,7 @@ class FTPIngestion:
             print('Could not establish ssh connection, error: ', str(sshException))
         except Exception as error:
             self.ssh_ok = False
-            print('Error establishing connection, error: ',
-                  str(AuthFailException))
+            print('Error establishing connection, error: ', error)
 
         return self.ssh_ok
 
@@ -97,10 +96,10 @@ class FTPIngestion:
 
         except paramiko.SFTPError as sftpError:
             self.sftp_ok = False
-            print('could not establish sftp connection, error: ', str(sftpError))
+            print('could not establish sftp connection, error: ', sftpError)
         except Exception as error:
             self.sftp_ok = False
-            print('could not establish sftp connection')
+            print('could not establish sftp connection. error: ', error)
         return self.sftp_ok
 
     # def move_files_to_original(self):
@@ -131,7 +130,7 @@ class FTPIngestion:
         src = source_file_path+'/' + source_file_name
         dest = processing_directory + source_file_name
         try:
-            stdin, stdout, stderr = self.ssh_client.exec_command(
+            _, _, _ = self.ssh_client.exec_command(
                 "mv " + src+" " + dest)
         except Exception as error:
             print("error moving files to proccessing directory, error: ", error)
@@ -149,7 +148,7 @@ class FTPIngestion:
         dest = processed_directory + source_file_name
 
         try:
-            stdin, stdout, stderr = self.ssh_client.exec_command(
+            _, _, _ = self.ssh_client.exec_command(
                 "mv " + src+" " + dest)
         except Exception as error:
             print("error moving files to processed directory, error: ", error)
