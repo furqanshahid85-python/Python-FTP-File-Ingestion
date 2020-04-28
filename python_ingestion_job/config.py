@@ -15,7 +15,7 @@ S3_BUCKET = "<s3 bucket name>"
 
 # sftp directory paths
 PARENT_DIR_PATH = "<path of directory on FTP server where all the files are present>"
-ORIGINAL_DIR_PATH = "<path to directory named 'original' on FTP server>"
+# ORIGINAL_DIR_PATH = "<path to directory named 'original' on FTP server>"
 PROCESSING_DIR_PATH = "<path to directory named 'processing' on FTP server>"
 PROCESSED_DIR_PATH = "<path to directory named 'processed' on FTP server>"
 
