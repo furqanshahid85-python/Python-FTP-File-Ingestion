@@ -28,6 +28,8 @@ from datetime import datetime
 
 import paramiko
 
+congfig_file = "config.json"
+
 
 class FTPIngestion:
 
@@ -43,8 +45,6 @@ class FTPIngestion:
         self.s3 = boto3.client('s3')
         self.s3_bucket_name = cfg.S3_BUCKET
         self.ftp_directory_path = cfg.PARENT_DIR_PATH
-        self.ftp_original_path = cfg.ORIGINAL_DIR_PATH
-        self.ftp_processing_path = cfg.PROCESSING_DIR_PATH
         self.ftp_processed_path = cfg.PROCESSED_DIR_PATH
 
     def create_ssh_connection(self):
@@ -70,10 +70,10 @@ class FTPIngestion:
 
         except paramiko.AuthenticationException as AuthFailException:
             self.ssh_ok = False
-            print('Authentication Failed, error: ', str(AuthFailException))
+            print('Authentication Failed, error: ', AuthFailException)
         except paramiko.SSHException as sshException:
             self.ssh_ok = False
-            print('Could not establish ssh connection, error: ', str(sshException))
+            print('Could not establish ssh connection, error: ', sshException)
         except Exception as error:
             self.ssh_ok = False
             print('Error establishing connection, error: ', error)
@@ -99,52 +99,20 @@ class FTPIngestion:
             print('could not establish sftp connection, error: ', sftpError)
         except Exception as error:
             self.sftp_ok = False
-            print('could not establish sftp connection. error: ', error)
+            print('could not establish sftp connection, error: ', error)
         return self.sftp_ok
 
-    # def move_files_to_original(self):
-    #     """
-    #     This method copies the original files from parent directory to original directory on the FTP server.
-    #     :param source_file_path: directory path in which file resides
-    #     :param source_file_name: name of the file
-    #     """
-    #     print('moving files to original directory')
-    #     src = self.ftp_directory_path + '/*'
-    #     dest = self.ftp_original_path
-
-    #     try:
-    #         stdin, stdout, stderr = self.ssh_client.exec_command(
-    #             "mv " + src+" " + dest)
-    #     except Exception as error:
-    #         print("error moving files to original directory, error: ", error)
-
-    def move_files_to_processing(self, source_file_path, source_file_name):
+    def move_files_to_processed(self, source_file_name):
         """
-        This method copies the original files from parent directory to processing directory on the FTP server.
-        :param source_file_path: directory path in which file resides
-        :param source_file_name: name of the file
-        """
-
-        print('moving '+source_file_name+' to processing directory.')
-        processing_directory = self.ftp_processing_path
-        src = source_file_path+'/' + source_file_name
-        dest = processing_directory + source_file_name
-        try:
-            _, _, _ = self.ssh_client.exec_command(
-                "mv " + src+" " + dest)
-        except Exception as error:
-            print("error moving files to proccessing directory, error: ", error)
-
-    def move_files_to_processed(self, source_file_path, source_file_name):
-        """
-        This method copies the original files from parent directory to processing directory on the FTP server.
+        This method moves the original files from parent directory to processed directory on the FTP server
+        after the files have been successfully uploaded on s3.
         :param source_file_path: directory path in which file resides
         :param source_file_name: name of the file
         """
 
         print('moving '+source_file_name+' to processed directory.')
         processed_directory = self.ftp_processed_path
-        src = source_file_path+'/' + source_file_name
+        src = self.ftp_directory_path+'/' + source_file_name
         dest = processed_directory + source_file_name
 
         try:
@@ -196,8 +164,10 @@ class FTPIngestion:
 
             self.s3.upload_fileobj(source_file, self.s3_bucket_name,
                                    s3_target_file, Config=config)
+            return True
         except Exception as error:
             print('could not upload file using multipart upload, error: ', error)
+            return False
 
     def initiate_ingestion(self):
         """
@@ -208,36 +178,28 @@ class FTPIngestion:
         """
         try:
             if self.create_sftp_connection():
-                # # copy files from parent directory to original directory
-                # self.move_files_to_original()
                 self.sftp_client.chdir(self.ftp_directory_path)
-
-                # copy files from parent directory to processing directory
                 files_to_upload = self.sftp_client.listdir()
-                for ftp_file in files_to_upload:
-                    self.move_files_to_processing(
-                        self.sftp_client.getcwd(), ftp_file)
-
-                # upload files in processing dir to s3
-                self.sftp_client.chdir(self.ftp_processing_path)
-                files_in_processing = self.sftp_client.listdir()
                 s3_partition = self.create_s3_partition()
+                files_to_move = []
 
-                for ftp_file in files_in_processing:
+                for ftp_file in files_to_upload:
                     sftp_file_obj = self.sftp_client.file(ftp_file, mode='r')
-                    self.s3_upload_file_multipart(
-                        sftp_file_obj, s3_partition+ftp_file)
-                print('all files uploaded to s3')
+                    if self.s3_upload_file_multipart(
+                            sftp_file_obj, s3_partition+ftp_file):
+                        print('file uploaded to s3')
+                        files_to_move.append(ftp_file)
 
-                # move files from processing dir to processed dir
-                files_to_move = self.sftp_client.listdir()
-                for ftp_file in files_to_move:
-                    self.move_files_to_processed(
-                        self.sftp_client.getcwd(), ftp_file)
+                # move files from parent dir to processed dir
+                if files_to_move:
+                    for uploaded_file in files_to_move:
+                        self.move_files_to_processed(uploaded_file)
+                else:
+                    print("nothing to upload")
             else:
                 print('Could not establish SFTP connection')
         except Exception as error:
-            print("files ingestion failed, error: ", str(error))
+            print("file ingestion failed, error: ", error)
 
         self.close_connections()
 
