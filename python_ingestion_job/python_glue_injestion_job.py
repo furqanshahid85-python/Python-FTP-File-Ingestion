@@ -160,7 +160,7 @@ class FTPIngestion:
         try:
             config = TransferConfig(
                 multipart_threshold=cfg.MULTIPART_THRESHOLD, multipart_chunksize=cfg.MULTIPART_CHUNKSIZE,
-                max_concurrency=cfg.MAX_CUNCURRENCY, use_threads=cfg.USER_THREADS)
+                max_concurrency=cfg.MAX_CONCURRENCY, use_threads=cfg.USER_THREADS)
 
             self.s3.upload_fileobj(source_file, self.s3_bucket_name,
                                    s3_target_file, Config=config)
