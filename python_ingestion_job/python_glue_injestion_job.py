@@ -28,9 +28,6 @@ from datetime import datetime
 
 import paramiko
 
-congfig_file = "config.json"
-
-
 class FTPIngestion:
 
     def __init__(self):
