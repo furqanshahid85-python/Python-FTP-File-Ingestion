@@ -58,7 +58,7 @@ class FTPIngestion:
                 paramiko.AutoAddPolicy())
 
             # in production, use load_system_host_keys
-            # ssh_client.load_system_host_keys()
+            # self.ssh_client.load_system_host_keys()
 
             self.ssh_client.connect(hostname=self.ftp_host, username=self.ftp_username,
                                     password=self.ftp_password, port=self.ftp_port)
